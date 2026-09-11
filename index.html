@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Open Claude session</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #f6f5f2; color: #222; }
+  main { max-width: 32rem; margin: 18vh auto; padding: 0 1.5rem; text-align: center; }
+  h1 { font-size: 1.4rem; font-weight: 600; }
+  #status { color: #555; word-break: break-all; }
+  a.btn { display: inline-block; margin-top: 1rem; padding: .7rem 1.4rem; border-radius: .6rem;
+          background: #d97757; color: #fff; text-decoration: none; font-weight: 600; }
+  .hint { font-size: .9rem; color: #777; margin-top: 1.5rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Opening Claude</h1>
+  <p id="status">Reading link.</p>
+  <p><a id="open" class="btn" href="#" hidden>Open in Claude</a></p>
+  <p class="hint">If nothing happens, allow your browser to open Claude, or click the button above.</p>
+</main>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var s = (params.get('s') || params.get('session') || '').trim();
+  var status = document.getElementById('status');
+  var btn = document.getElementById('open');
+  var isLocal = s === 'last' || /^local_[A-Za-z0-9-]{1,64}$/.test(s);
+  var isCloud = /^(cse|session)_[A-Za-z0-9_-]+$/.test(s);
+  if (!isLocal && !isCloud) {
+    status.textContent = 'No valid session id in this link. Use ?s=local_... or ?s=last';
+    return;
+  }
+  var target = isCloud
+    ? 'claude://code/' + encodeURIComponent(s)
+    : 'claude://code/continue?session=' + encodeURIComponent(s);
+  btn.href = target;
+  btn.hidden = false;
+  status.textContent = 'Session ' + s;
+  location.href = target;
+})();
+</script>
+</body>
+</html>
