@@ -7,11 +7,12 @@
 <title>Open Claude session</title>
 <style>
   body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #f6f5f2; color: #222; }
-  main { max-width: 32rem; margin: 18vh auto; padding: 0 1.5rem; text-align: center; }
+  main { max-width: 32rem; margin: 14vh auto; padding: 0 1.5rem; text-align: center; }
   h1 { font-size: 1.4rem; font-weight: 600; }
   #status { color: #555; word-break: break-all; }
-  a.btn { display: inline-block; margin-top: 1rem; padding: .7rem 1.4rem; border-radius: .6rem;
+  a.btn { display: block; margin: .8rem auto 0; max-width: 20rem; padding: .8rem 1.4rem; border-radius: .6rem;
           background: #d97757; color: #fff; text-decoration: none; font-weight: 600; }
+  a.btn.alt { background: #555; }
   .hint { font-size: .9rem; color: #777; margin-top: 1.5rem; }
 </style>
 </head>
@@ -19,28 +20,44 @@
 <main>
   <h1>Opening Claude</h1>
   <p id="status">Reading link.</p>
-  <p><a id="open" class="btn" href="#" hidden>Open in Claude</a></p>
-  <p class="hint">If nothing happens, allow your browser to open Claude, or click the button above.</p>
+  <a id="open-app" class="btn" href="#" hidden>Open in Claude app</a>
+  <a id="open-web" class="btn alt" href="#" hidden>Open via claude.ai</a>
+  <a id="open-desktop" class="btn" href="#" hidden>Open in Claude desktop</a>
+  <p class="hint" id="hint"></p>
 </main>
 <script>
 (function () {
-  var params = new URLSearchParams(location.search);
-  var s = (params.get('s') || params.get('session') || '').trim();
-  var status = document.getElementById('status');
-  var btn = document.getElementById('open');
-  var isLocal = s === 'last' || /^local_[A-Za-z0-9-]{1,64}$/.test(s);
-  var isCloud = /^(cse|session)_[A-Za-z0-9_-]+$/.test(s);
-  if (!isLocal && !isCloud) {
-    status.textContent = 'No valid session id in this link. Use ?s=local_... or ?s=last';
-    return;
+  var q = new URLSearchParams(location.search);
+  var s = (q.get('s') || '').trim();   // desktop session id: local_... or "last"
+  var c = (q.get('c') || '').trim();   // claude.ai (Remote Control) session id: session_...
+  var el = function (id) { return document.getElementById(id); };
+  var status = el('status'), hint = el('hint');
+  var okLocal = s === 'last' || /^local_[A-Za-z0-9-]{1,64}$/.test(s);
+  var okCloud = /^session_[A-Za-z0-9_-]+$/.test(c);
+  var ua = navigator.userAgent;
+  var isMobile = /Android|iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var desktopUrl = okLocal ? 'claude://code/continue?session=' + encodeURIComponent(s) : null;
+  var webUrl = okCloud ? 'https://claude.ai/code/' + encodeURIComponent(c) : null;
+  var appUrl = okCloud ? 'claude://code/' + encodeURIComponent(c) : null;
+  if (!desktopUrl && !webUrl) { status.textContent = 'No valid session id in this link.'; return; }
+  if (isMobile) {
+    if (!webUrl) { status.textContent = 'This link only knows the desktop session. Open it on the computer that runs it.'; return; }
+    status.textContent = 'Session ' + c;
+    el('open-app').href = appUrl; el('open-app').hidden = false;
+    el('open-web').href = webUrl; el('open-web').hidden = false;
+    hint.textContent = 'Try the first button. If the Claude app shows an error, use the second one.';
+  } else {
+    if (desktopUrl) { el('open-desktop').href = desktopUrl; el('open-desktop').hidden = false; }
+    if (webUrl) { el('open-web').href = webUrl; el('open-web').hidden = false; }
+    if (desktopUrl) {
+      status.textContent = 'Session ' + s;
+      hint.textContent = 'If nothing happens, allow your browser to open Claude, or click the button.';
+      location.href = desktopUrl;
+    } else {
+      status.textContent = 'Session ' + c;
+      location.replace(webUrl);
+    }
   }
-  var target = isCloud
-    ? 'claude://code/' + encodeURIComponent(s)
-    : 'claude://code/continue?session=' + encodeURIComponent(s);
-  btn.href = target;
-  btn.hidden = false;
-  status.textContent = 'Session ' + s;
-  location.href = target;
 })();
 </script>
 </body>
