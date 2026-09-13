@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Open Claude session</title>
+<title>Open in Claude</title>
 <style>
   body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #f6f5f2; color: #222; }
   main { max-width: 32rem; margin: 14vh auto; padding: 0 1.5rem; text-align: center; }
@@ -20,43 +20,63 @@
 <main>
   <h1>Opening Claude</h1>
   <p id="status">Reading link.</p>
-  <a id="open-app" class="btn" href="#" hidden>Open in Claude app</a>
-  <a id="open-web" class="btn alt" href="#" hidden>Open via claude.ai</a>
-  <a id="open-desktop" class="btn" href="#" hidden>Open in Claude desktop</a>
+  <a id="b1" class="btn" href="#" hidden></a>
+  <a id="b2" class="btn alt" href="#" hidden></a>
   <p class="hint" id="hint"></p>
 </main>
 <script>
 (function () {
+  // Parameters (any one is enough):
+  //   c    = claude.ai id of a Code session (session_... or cse_...). Works for cloud sessions and for
+  //          desktop sessions that have Remote Control on. Opens in the mobile app and the desktop app.
+  //   s    = desktop-only id of a Claude desktop session (local_... or "last"). Desktop app only.
+  //   chat = uuid of a claude.ai chat conversation. Desktop app, browser, and (experimental) mobile app.
   var q = new URLSearchParams(location.search);
-  var s = (q.get('s') || '').trim();   // desktop session id: local_... or "last"
-  var c = (q.get('c') || '').trim();   // claude.ai (Remote Control) session id: session_...
+  var s = (q.get('s') || '').trim();
+  var c = (q.get('c') || '').trim();
+  var chat = (q.get('chat') || '').trim();
   var el = function (id) { return document.getElementById(id); };
-  var status = el('status'), hint = el('hint');
+  var status = el('status'), hint = el('hint'), b1 = el('b1'), b2 = el('b2');
   var okLocal = s === 'last' || /^local_[A-Za-z0-9-]{1,64}$/.test(s);
-  var okCloud = /^session_[A-Za-z0-9_-]+$/.test(c);
+  var okCloud = /^(session|cse)_[A-Za-z0-9_-]+$/.test(c);
+  var okChat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chat);
   var ua = navigator.userAgent;
   var isMobile = /Android|iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-  var desktopUrl = okLocal ? 'claude://code/continue?session=' + encodeURIComponent(s) : null;
-  var webUrl = okCloud ? 'https://claude.ai/code/' + encodeURIComponent(c) : null;
-  var appUrl = okCloud ? 'claude://code/' + encodeURIComponent(c) : null;
-  if (!desktopUrl && !webUrl) { status.textContent = 'No valid session id in this link.'; return; }
-  if (isMobile) {
-    if (!webUrl) { status.textContent = 'This link only knows the desktop session. Open it on the computer that runs it.'; return; }
-    status.textContent = 'Session ' + c;
-    el('open-app').href = appUrl; el('open-app').hidden = false;
-    el('open-web').href = webUrl; el('open-web').hidden = false;
-    hint.textContent = 'Try the first button. If the Claude app shows an error, use the second one.';
-  } else {
-    if (desktopUrl) { el('open-desktop').href = desktopUrl; el('open-desktop').hidden = false; }
-    if (webUrl) { el('open-web').href = webUrl; el('open-web').hidden = false; }
-    if (desktopUrl) {
-      status.textContent = 'Session ' + s;
-      hint.textContent = 'If nothing happens, allow your browser to open Claude, or click the button.';
-      location.href = desktopUrl;
+  function button(b, label, href) { b.textContent = label; b.href = href; b.hidden = false; }
+
+  if (okChat) {
+    var chatApp = 'claude://claude.ai/chat/' + chat;
+    var chatWeb = 'https://claude.ai/chat/' + chat;
+    status.textContent = 'Chat ' + chat;
+    if (isMobile) {
+      button(b1, 'Try the Claude app', chatApp);
+      button(b2, 'Open in browser', chatWeb);
+      hint.textContent = 'Claude publishes no app link for chats yet, so the first button is an experiment; the second always works once you are signed in.';
     } else {
-      status.textContent = 'Session ' + c;
-      location.replace(webUrl);
+      button(b1, 'Open in Claude desktop', chatApp);
+      button(b2, 'Open on claude.ai', chatWeb);
+      hint.textContent = 'If nothing happens, allow your browser to open Claude, or use a button.';
+      location.href = chatApp;
     }
+    return;
+  }
+  if (!okCloud && !okLocal) { status.textContent = 'No valid session id in this link.'; return; }
+  var codeWeb = okCloud ? 'https://claude.ai/code/' + encodeURIComponent(c) : null;
+  if (isMobile) {
+    if (!okCloud) { status.textContent = 'This link only knows the desktop session. Open it on the computer that runs it.'; return; }
+    status.textContent = 'Session ' + c;
+    var codeApp = 'claude://code/' + encodeURIComponent(c);
+    button(b1, 'Open in Claude app', codeApp);
+    button(b2, 'Open via claude.ai', codeWeb);
+    hint.textContent = 'If the app does not open by itself, tap the first button.';
+    location.href = codeApp;
+  } else {
+    var desk = okCloud ? 'claude://claude.ai/code/' + encodeURIComponent(c) : 'claude://code/continue?session=' + encodeURIComponent(s);
+    status.textContent = 'Session ' + (okCloud ? c : s);
+    button(b1, 'Open in Claude desktop', desk);
+    if (codeWeb) button(b2, 'Open on claude.ai', codeWeb);
+    hint.textContent = 'If nothing happens, allow your browser to open Claude, or use a button.';
+    location.href = desk;
   }
 })();
 </script>

@@ -1,11 +1,11 @@
 # Claude session link
 
-A single static page that turns a normal https link into the right way of opening a Claude Code session on the device you are holding.
+A single static page that turns a normal https link into the right way of opening a Claude conversation on the device you are holding.
 
-Usage: `https://irina655.github.io/claude-session-link/?s=<desktop id>&c=<claude.ai id>`
+`https://irina655.github.io/claude-session-link/?c=<session id>` for a Claude Code session (cloud, or a desktop session with Remote Control on). Opens the Claude mobile app or the Claude desktop app.
 
-- `s=local_...` is the Claude desktop session id. On a computer the page opens `claude://code/continue?session=...`.
-- `c=session_...` is the same session's claude.ai (Remote Control) id. On a phone the page offers the Claude app and claude.ai.
-- `s=last` opens the most recently active desktop session.
+`https://irina655.github.io/claude-session-link/?chat=<uuid>` for a claude.ai chat. Opens the desktop app; on a phone, the browser (the app route is experimental).
 
-The page holds no data. The session ids live only in the link you share.
+`https://irina655.github.io/claude-session-link/?s=<local id>` for a desktop session without Remote Control. Desktop app only.
+
+The page holds no data. The ids live only in the link you share.
