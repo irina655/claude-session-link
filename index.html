@@ -31,15 +31,18 @@
   //          desktop sessions that have Remote Control on. Opens in the mobile app and the desktop app.
   //   s    = desktop-only id of a Claude desktop session (local_... or "last"). Desktop app only.
   //   chat = uuid of a claude.ai chat conversation. Desktop app, browser, and (experimental) mobile app.
+  //   cowork = claude.ai id of a Cowork session (session_... or cse_...). Desktop app and mobile app.
   var q = new URLSearchParams(location.search);
   var s = (q.get('s') || '').trim();
   var c = (q.get('c') || '').trim();
   var chat = (q.get('chat') || '').trim();
+  var cowork = (q.get('cowork') || '').trim();
   var el = function (id) { return document.getElementById(id); };
   var status = el('status'), hint = el('hint'), b1 = el('b1'), b2 = el('b2');
   var okLocal = s === 'last' || /^local_[A-Za-z0-9-]{1,64}$/.test(s);
   var okCloud = /^(session|cse)_[A-Za-z0-9_-]+$/.test(c);
   var okChat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chat);
+  var okCowork = /^(session|cse)_[A-Za-z0-9_-]+$/.test(cowork);
   var ua = navigator.userAgent;
   var isMobile = /Android|iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   function button(b, label, href) { b.textContent = label; b.href = href; b.hidden = false; }
@@ -57,6 +60,22 @@
       button(b2, 'Open on claude.ai', chatWeb);
       hint.textContent = 'If nothing happens, allow your browser to open Claude, or use a button.';
       location.href = chatApp;
+    }
+    return;
+  }
+  if (okCowork) {
+    var cwApp = 'claude://claude.ai/cowork/' + encodeURIComponent(cowork);
+    var cwWeb = 'https://claude.ai/cowork/' + encodeURIComponent(cowork);
+    status.textContent = 'Cowork session ' + cowork;
+    if (isMobile) {
+      button(b1, 'Open in Claude app', cwWeb);
+      button(b2, 'Try the app scheme', cwApp);
+      hint.textContent = 'The first button is the official link for the app; the second is an experiment.';
+    } else {
+      button(b1, 'Open in Claude desktop', cwApp);
+      button(b2, 'Open on claude.ai', cwWeb);
+      hint.textContent = 'If nothing happens, allow your browser to open Claude, or use a button.';
+      location.href = cwApp;
     }
     return;
   }
